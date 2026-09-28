@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Daftar Obat Anestesi</title>
+  <meta name="description" content="Referensi & Kalkulator Dosis Obat Anestesi — Dewasa & Anak, data live dari Google Spreadsheet.">
+  <meta name="theme-color" content="#0F766E">
+
+  <!-- ===================== PWA: bisa "diinstal" di Android & iPhone ===================== -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Obat Anestesi">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            num: ['Inter', 'ui-sans-serif', 'sans-serif']
+          },
+          colors: {
+            teal: {
+              50:'#f0fdfa',100:'#ccfbf1',200:'#99f6e4',300:'#5eead4',400:'#2dd4bf',
+              500:'#14b8a6',600:'#0d9488',700:'#0F766E',800:'#115e59',900:'#134e4a'
+            },
+            cyan: { 600:'#0891B2' },
+            emerald: {
+              50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',
+              500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    ::-webkit-scrollbar{ width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:8px; }
+    ::-webkit-scrollbar-track{ background:transparent; }
+    body{ font-family:'Plus Jakarta Sans', Inter, sans-serif; }
+    .num{ font-family:'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+    .panel{ display:none; }
+    .panel.active{ display:block; }
+    .subpanel{ display:none; }
+    .subpanel.active{ display:block; }
+    .tab-pill{ transition: all .2s ease; }
+    .tab-pill.active{ background:#0F766E; color:#fff; box-shadow:0 1px 2px rgba(15,118,110,.35); }
+    .tab-pill:not(.active){ color:#475569; }
+    .tab-pill:not(.active):hover{ background:#f1f5f9; }
+    .subtab.active{ background:#ffffff; color:#0F766E; box-shadow:0 1px 3px rgba(15,23,42,.08); }
+    .subtab:not(.active){ color:#64748b; }
+    .field-input{
+      width:100%; border:1px solid #e2e8f0; border-radius:0.75rem; padding:0.65rem 0.85rem;
+      font-size:0.9rem; background:#fff; transition: border-color .15s, box-shadow .15s; color:#0f172a;
+    }
+    .field-input:focus{ outline:none; border-color:#0F766E; box-shadow:0 0 0 3px rgba(15,118,110,.15); }
+    .field-label{ display:block; font-size:0.78rem; font-weight:600; color:#334155; margin-bottom:0.3rem; }
+    .modal-overlay{
+      display:none; position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(2px);
+      z-index:50; align-items:center; justify-content:center; padding:16px;
+    }
+    .modal-overlay.active{ display:flex; }
+    .fade-in{ animation: fadeIn .25s ease; }
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+    .obat-row:hover{ background:#f0fdfa; }
+    table.obat-table th:first-child{ border-top-left-radius:0.75rem; }
+    table.obat-table th:last-child{ border-top-right-radius:0.75rem; }
+    .btn-primary{
+      background:#0F766E; color:#fff; font-weight:700; border-radius:0.9rem;
+      padding:0.85rem 1.25rem; display:flex; align-items:center; justify-content:center; gap:0.5rem;
+      transition: background .15s, transform .1s; width:100%; font-size:0.95rem;
+    }
+    .btn-primary:hover{ background:#115e59; }
+    .btn-primary:active{ transform: scale(0.985); }
+    .btn-secondary{
+      background:#fff; color:#0F766E; font-weight:600; border-radius:0.9rem; border:1px solid #99f6e4;
+      padding:0.5rem 0.9rem; display:inline-flex; align-items:center; justify-content:center; gap:0.4rem;
+      transition: background .15s; font-size:0.78rem;
+    }
+    .btn-secondary:hover{ background:#f0fdfa; }
+    .chip-preset{
+      border:1px solid #e2e8f0; border-radius:9999px; padding:0.4rem 0.9rem; font-size:0.78rem;
+      font-weight:600; color:#334155; background:#fff; cursor:pointer; transition:.15s;
+    }
+    .chip-preset.active{ background:#0F766E; color:#fff; border-color:#0F766E; }
+    .chip-preset:hover:not(.active){ border-color:#0F766E; color:#0F766E; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- ============ HEADER ============ -->
+  <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200" style="padding-top:env(safe-area-inset-top,0px);">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-700 flex items-center justify-center text-white shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3v12h-5c-.023-3.681.184-7.406 5-12zM12 3H7v18h10"/><path d="M8 21h8"/></svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">DAFTAR OBAT ANESTESI</h1>
+          <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Referensi &amp; Kalkulator Dosis — Dewasa &amp; Anak</p>
+        </div>
+      </div>
+      <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-teal-800 bg-teal-50 border border-teal-200 rounded-full px-3 py-1.5">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 15 -2 5 3-2 3 2 -2-5"/><circle cx="12" cy="8" r="6"/></svg>
+        Dibuat oleh Bagaskara Dion Suparman
+      </span>
+    </div>
+
+    <!-- Segmented tab navigation -->
+    <div class="max-w-5xl mx-auto px-4 pb-3">
+      <nav class="inline-flex w-full sm:w-auto bg-slate-100 rounded-full p-1 gap-1 overflow-x-auto">
+        <button class="tab-pill active flex-1 sm:flex-none whitespace-nowrap text-sm font-semibold rounded-full px-4 py-2" data-tab="daftar">Daftar Obat</button>
+        <button class="tab-pill flex-1 sm:flex-none whitespace-nowrap text-sm font-semibold rounded-full px-4 py-2" data-tab="daftarcairan">Daftar Cairan</button>
+        <button class="tab-pill flex-1 sm:flex-none whitespace-nowrap text-sm font-semibold rounded-full px-4 py-2" data-tab="dosis">Kalkulator Dosis</button>
+        <button class="tab-pill flex-1 sm:flex-none whitespace-nowrap text-sm font-semibold rounded-full px-4 py-2" data-tab="encer">Kalkulator Pengenceran</button>
+        <button class="tab-pill flex-1 sm:flex-none whitespace-nowrap text-sm font-semibold rounded-full px-4 py-2" data-tab="cairan">Kalkulator Cairan</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+
+    <!-- ===================== TAB 1: DAFTAR OBAT ===================== -->
+    <section id="panel-daftar" class="panel active fade-in">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <h2 class="text-lg font-bold text-slate-900">Daftar Obat Anestesi</h2>
+          <button class="btn-secondary shrink-0" onclick="loadObatList()">⟳ Muat Ulang</button>
+        </div>
+        <div class="relative mb-4">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" class="field-input pl-10" placeholder="Cari nama obat, golongan, atau merek dagang...">
+        </div>
+        <div id="tableWrap" class="overflow-x-auto rounded-xl border border-slate-200" style="max-height:560px; overflow-y:auto;">
+          <div class="text-center py-10 text-slate-400 text-sm">Memuat data dari spreadsheet...</div>
+        </div>
+        <p class="text-xs text-slate-400 mt-3">Data tabel diambil langsung (live) dari Google Spreadsheet sumber (Sheet1) melalui API Apps Script. Klik nama obat untuk melihat detail lengkap.</p>
+      </div>
+    </section>
+
+    <!-- ===================== TAB: DAFTAR CAIRAN (dari Sheet2) ===================== -->
+    <section id="panel-daftarcairan" class="panel fade-in">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <h2 class="text-lg font-bold text-slate-900">Daftar Cairan Infus &amp; Produk Darah</h2>
+          <button class="btn-secondary shrink-0" onclick="loadCairanList()">⟳ Muat Ulang</button>
+        </div>
+        <div class="relative mb-4">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="cairanListSearchInput" class="field-input pl-10" placeholder="Cari kategori, nama cairan, atau tonisitas...">
+        </div>
+        <div id="cairanListTableWrap" class="overflow-x-auto rounded-xl border border-slate-200" style="max-height:560px; overflow-y:auto;">
+          <div class="text-center py-10 text-slate-400 text-sm">Memuat data dari spreadsheet...</div>
+        </div>
+        <p class="text-xs text-slate-400 mt-3">Data tabel diambil langsung (live) dari Sheet2 pada Google Spreadsheet sumber melalui API Apps Script. Klik nama cairan untuk melihat detail lengkap.</p>
+      </div>
+    </section>
+
+    <!-- ===================== TAB 2: KALKULATOR DOSIS ===================== -->
+    <section id="panel-dosis" class="panel fade-in space-y-5">
+
+      <!-- sub tab switch -->
+      <div class="inline-flex bg-slate-100 rounded-full p-1 gap-1">
+        <button class="subtab active text-xs sm:text-sm font-semibold rounded-full px-4 py-2" data-sub="perkg">Dosis per kgBB</button>
+        <button class="subtab text-xs sm:text-sm font-semibold rounded-full px-4 py-2" data-sub="pump">Syringe Pump</button>
+      </div>
+
+      <!-- ---- SUB A: DOSIS PER KGBB ---- -->
+      <div id="sub-perkg" class="subpanel active space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h2 class="text-lg font-bold text-slate-900 mb-4">Kalkulator Dosis Obat Anestesi</h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <label class="field-label" for="dosisObat">Pilih Obat</label>
+              <select id="dosisObat" class="field-input"></select>
+            </div>
+            <div>
+              <label class="field-label" for="dosisPopulasi">Populasi</label>
+              <select id="dosisPopulasi" class="field-input">
+                <option value="dewasa">Dewasa</option>
+                <option value="anak">Anak</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="dosisBB">Berat Badan (kg)</label>
+              <input type="number" id="dosisBB" class="field-input" min="0" step="0.1" placeholder="mis. 60">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="field-label" for="dosisJenis">Jenis Dosis</label>
+              <select id="dosisJenis" class="field-input"></select>
+            </div>
+            <div class="sm:col-span-2" id="dosisStokWrap"></div>
+            <div class="sm:col-span-2" id="dosisSpuitWrap"></div>
+          </div>
+
+          <!-- MAC card (muncul otomatis untuk obat inhalasi volatil) -->
+          <div id="macCardWrap" class="mt-4"></div>
+
+          <button class="btn-primary mt-5" onclick="hitungDosis()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+            Hitung Dosis
+          </button>
+
+          <div id="dosisResult"></div>
+
+          <div class="mt-4 flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <svg class="text-amber-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            <p class="text-xs text-amber-800 leading-relaxed">Kalkulator ini adalah alat bantu edukasi/referensi cepat, <b>bukan pengganti penilaian klinis</b> dokter/perawat anestesi. Selalu verifikasi ulang dosis sesuai kondisi klinis pasien, protokol RS, dan instruksi dokter penanggung jawab.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- SUB B: SYRINGE PUMP ---- -->
+      <div id="sub-pump" class="subpanel space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h2 class="text-lg font-bold text-slate-900">Kalkulator Syringe Pump (Infus Kontinu)</h2>
+          <p class="text-xs text-slate-500 mt-1 mb-4">Menghitung laju infus (cc/jam) pada syringe pump untuk spuit 20 mL atau 50 mL, berdasarkan dosis yang diinginkan per kgBB.</p>
+
+          <label class="field-label">Preset Cepat (opsional, isi otomatis)</label>
+          <select id="pumpPreset" class="field-input mb-4"></select>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="field-label" for="pumpBB">Berat Badan Pasien (kg)</label>
+              <input type="number" id="pumpBB" class="field-input" min="0" step="0.1" placeholder="mis. 60">
+            </div>
+            <div>
+              <label class="field-label" for="pumpSyringeVol">Ukuran Spuit (Volume Total Larutan)</label>
+              <div class="flex gap-2" id="pumpSyringeChips">
+                <button type="button" class="chip-preset active" data-vol="20">20 mL</button>
+                <button type="button" class="chip-preset" data-vol="50">50 mL</button>
+                <button type="button" class="chip-preset" data-vol="custom">Lainnya</button>
+              </div>
+              <input type="number" id="pumpSyringeVol" class="field-input mt-2" min="0" step="0.5" value="20">
+            </div>
+
+            <div>
+              <label class="field-label" for="pumpJumlahObat">Jumlah Total Obat dalam Spuit</label>
+              <div class="flex gap-2">
+                <input type="number" id="pumpJumlahObat" class="field-input" min="0" step="0.01" placeholder="mis. 4">
+                <select id="pumpSatuanJumlah" class="field-input" style="max-width:110px;">
+                  <option value="mg">mg</option>
+                  <option value="mcg">mcg</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="field-label" for="pumpKonsentrasiTampil">Konsentrasi Larutan (otomatis)</label>
+              <input type="text" id="pumpKonsentrasiTampil" class="field-input bg-slate-50 text-slate-500" readonly value="—">
+            </div>
+
+            <div>
+              <label class="field-label" for="pumpDosis">Dosis yang Diinginkan</label>
+              <input type="number" id="pumpDosis" class="field-input" min="0" step="0.001" placeholder="mis. 0,05">
+            </div>
+            <div>
+              <label class="field-label" for="pumpSatuanDosis">Satuan Dosis</label>
+              <select id="pumpSatuanDosis" class="field-input">
+                <option value="mcg_menit">mcg/kgBB/menit</option>
+                <option value="mcg_jam">mcg/kgBB/jam</option>
+                <option value="mg_jam">mg/kgBB/jam</option>
+                <option value="mg_menit">mg/kgBB/menit</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn-primary mt-5" onclick="hitungSyringePump()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
+            Hitung Laju Infus
+          </button>
+
+          <div id="pumpResult"></div>
+
+          <div class="mt-4 flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <svg class="text-amber-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            <p class="text-xs text-amber-800 leading-relaxed">Preset hanya contoh umum praktik klinis dan <b>dapat berbeda dengan kebijakan farmasi RS Anda</b>. Selalu cek ulang konsentrasi akhir, kompatibilitas jalur, dan batas dosis maksimal sebelum memberikan infus.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================== TAB 3: KALKULATOR PENGENCERAN ===================== -->
+    <section id="panel-encer" class="panel fade-in">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Kalkulator Pengenceran / Titrasi</h2>
+        <p class="text-xs text-slate-500 mb-4">Menghitung volume obat pekat + volume pelarut agar diperoleh konsentrasi akhir yang diinginkan (mis. 1 mg/cc, 5 mg/cc, 10 mg/cc), lengkap dengan rekomendasi pelarut aman.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="field-label" for="encerObat">Pilih Obat</label>
+            <select id="encerObat" class="field-input"></select>
+          </div>
+          <div class="sm:col-span-2" id="encerStokWrap"></div>
+          <div>
+            <label class="field-label" for="targetKonsentrasiPreset">Konsentrasi Akhir yang Diinginkan</label>
+            <select id="targetKonsentrasiPreset" class="field-input"></select>
+          </div>
+          <div>
+            <label class="field-label" for="targetKonsentrasiCustom">Atau isi manual (per mL)</label>
+            <input type="number" id="targetKonsentrasiCustom" class="field-input" min="0" step="0.01" placeholder="mis. 2.5">
+          </div>
+          <div class="sm:col-span-2">
+            <label class="field-label" for="volumeTotal">Volume Akhir yang Diinginkan (mL)</label>
+            <input type="number" id="volumeTotal" class="field-input" min="0" step="0.5" placeholder="mis. 50">
+          </div>
+        </div>
+
+        <button class="btn-primary mt-5" onclick="hitungEncer()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6l-5.5 9.5A2 2 0 0 0 5.3 21h13.4a2 2 0 0 0 1.8-3.5L15 8V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>
+          Hitung Pengenceran
+        </button>
+
+        <div id="encerResult"></div>
+
+        <div class="mt-4 flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <svg class="text-amber-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+          <p class="text-xs text-amber-800 leading-relaxed">Rekomendasi pelarut &amp; batas konsentrasi bersifat umum. Selalu cek label sediaan resmi dan kebijakan farmasi rumah sakit Anda.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== TAB 4: KALKULATOR CAIRAN ===================== -->
+    <section id="panel-cairan" class="panel fade-in">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h2 class="text-lg font-bold text-slate-900 mb-1">Kalkulator Kebutuhan Cairan &amp; Transfusi Perioperatif</h2>
+        <p class="text-xs text-slate-500 mb-4">Menghitung EBV, maintenance cairan, kebutuhan cairan puasa, kehilangan cairan operasi, defisit cairan, ABL, perkiraan HB post-operasi, dan volume darah yang diberikan — seluruhnya saling berkaitan dari data pasien di bawah ini.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="field-label" for="cairanUsiaNilai">1. Usia</label>
+            <div class="flex gap-2">
+              <input type="number" id="cairanUsiaNilai" class="field-input" min="0" step="1" placeholder="mis. 25">
+              <select id="cairanUsiaSatuan" class="field-input" style="max-width:112px;">
+                <option value="tahun">Tahun</option>
+                <option value="bulan">Bulan</option>
+                <option value="hari">Hari</option>
+              </select>
+            </div>
+          </div>
+          <div id="cairanGenderWrap">
+            <label class="field-label" for="cairanGender">Jenis Kelamin (khusus Dewasa)</label>
+            <select id="cairanGender" class="field-input">
+              <option value="l">Laki-laki</option>
+              <option value="p">Perempuan</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="field-label" for="cairanBB">2. Berat Badan / BB (kg)</label>
+            <input type="number" id="cairanBB" class="field-input" min="0" step="0.1" placeholder="mis. 60">
+          </div>
+          <div>
+            <label class="field-label" for="cairanKategoriPasien">Kategori Pasien (otomatis dari usia)</label>
+            <input type="text" id="cairanKategoriPasien" class="field-input bg-slate-50 text-slate-500" readonly value="—">
+          </div>
+
+          <div>
+            <label class="field-label" for="cairanJenisOperasi">3. Jenis Operasi</label>
+            <select id="cairanJenisOperasi" class="field-input">
+              <option value="minimalis" data-min="0" data-max="1">Minimalis (0–1 cc/kgBB)</option>
+              <option value="kecil" data-min="2" data-max="3">Operasi Kecil (2–3 cc/kgBB)</option>
+              <option value="sedang" data-min="4" data-max="5">Operasi Sedang (4–5 cc/kgBB)</option>
+              <option value="besar" data-min="6" data-max="8">Operasi Besar (6–8 cc/kgBB)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="cairanFaktorOperasi">Faktor Operasi Terpilih (cc/kgBB)</label>
+            <input type="number" id="cairanFaktorOperasi" class="field-input" min="0" max="1" step="0.1" value="0.5">
+          </div>
+
+          <div>
+            <label class="field-label" for="cairanLamaPuasa">4. Lama Puasa (jam)</label>
+            <input type="number" id="cairanLamaPuasa" class="field-input" min="0" step="0.5" placeholder="mis. 6">
+          </div>
+          <div></div>
+
+          <div>
+            <label class="field-label" for="cairanHbAwal">5. HB Awal (g/dL)</label>
+            <input type="number" id="cairanHbAwal" class="field-input" min="0" step="0.1" placeholder="mis. 12">
+          </div>
+          <div>
+            <label class="field-label" for="cairanHbTarget">6. HB Minimal Target (g/dL)</label>
+            <input type="number" id="cairanHbTarget" class="field-input" min="0" step="0.1" placeholder="mis. 8">
+          </div>
+
+          <div>
+            <label class="field-label" for="cairanHbMaks">HB Maksimal Target (g/dL)</label>
+            <input type="number" id="cairanHbMaks" class="field-input" min="0" step="0.1" placeholder="mis. 10">
+            <p class="text-[11px] text-slate-400 mt-1">＊Umumnya diisi/relevan bila HB sekarang &lt; 10 g/dL (dipakai untuk rumus 8: Volume Darah yang Diberikan).</p>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-5 border-t border-slate-100">
+          <h3 class="text-sm font-bold text-slate-900 mb-1">Data Perioperatif &amp; Balance Cairan (Intake vs Output)</h3>
+          <p class="text-xs text-slate-500 mb-4">Untuk menghitung Perkiraan Kebutuhan Cairan Perioperatif (poin 9), IWL &amp; estimasi produksi urin (poin 10), serta Kalkulator Balance Cairan di bawah.</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="field-label" for="cairanLamaOperasi">Lama Operasi (jam)</label>
+              <input type="number" id="cairanLamaOperasi" class="field-input" min="0" step="0.5" placeholder="mis. 3">
+            </div>
+            <div>
+              <label class="field-label" for="cairanIwlRate">Estimasi Laju IWL (cc/kgBB/jam)</label>
+              <input type="number" id="cairanIwlRate" class="field-input" min="0" step="0.1" value="0.5">
+              <p class="text-[11px] text-slate-400 mt-1">Asumsi suhu standar kamar operasi ber-AC (±20°C). Sesuaikan bila perlu.</p>
+            </div>
+
+            <div>
+              <label class="field-label" for="cairanKristaloid">Intake — Cairan Kristaloid Masuk (cc)</label>
+              <input type="number" id="cairanKristaloid" class="field-input" min="0" step="1" placeholder="mis. 500">
+            </div>
+            <div>
+              <label class="field-label" for="cairanKoloid">Intake — Cairan Koloid Masuk (cc)</label>
+              <input type="number" id="cairanKoloid" class="field-input" min="0" step="1" placeholder="mis. 0">
+            </div>
+            <div>
+              <label class="field-label" for="cairanProdukDarah">Intake — Produk Darah Masuk (cc)</label>
+              <input type="number" id="cairanProdukDarah" class="field-input" min="0" step="1" placeholder="mis. 0">
+            </div>
+            <div></div>
+
+            <div>
+              <label class="field-label" for="cairanUrinTotal">Output — Urin Total (cc)</label>
+              <input type="number" id="cairanUrinTotal" class="field-input" min="0" step="1" placeholder="mis. 200">
+            </div>
+            <div>
+              <label class="field-label" for="cairanDarahSuction">Output — Darah pada Suction (cc)</label>
+              <input type="number" id="cairanDarahSuction" class="field-input" min="0" step="1" placeholder="mis. 100">
+            </div>
+            <div>
+              <label class="field-label" for="cairanKasaBesar">Output — Jumlah Kasa Besar (pcs, 1 pcs = 100 cc)</label>
+              <input type="number" id="cairanKasaBesar" class="field-input" min="0" step="1" placeholder="mis. 2">
+            </div>
+            <div>
+              <label class="field-label" for="cairanKasaKecil">Output — Jumlah Kasa Kecil (pcs, 1 pcs = 5 cc)</label>
+              <input type="number" id="cairanKasaKecil" class="field-input" min="0" step="1" placeholder="mis. 4">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary mt-5" onclick="hitungCairan()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.97 0 8-3.5 8-8 0-4-3-7-8-13-5 6-8 9-8 13 0 4.5 3.03 8 8 8Z"/></svg>
+          Hitung Kebutuhan Cairan
+        </button>
+
+        <div id="cairanResult"></div>
+
+        <div class="mt-4 flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <svg class="text-amber-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+          <p class="text-xs text-amber-800 leading-relaxed">Kalkulator cairan &amp; transfusi ini adalah alat bantu edukasi/referensi cepat berdasarkan rumus umum perioperatif (EBV, Holliday-Segar, ABL), <b>bukan pengganti penilaian klinis</b> dokter anestesi. Keputusan jenis cairan (kristaloid/koloid) dan transfusi darah tetap harus disesuaikan kondisi klinis pasien &amp; protokol rumah sakit.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-slate-900 text-slate-300 text-center px-4 py-6 mt-6" style="padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));">
+    <div class="max-w-3xl mx-auto space-y-1.5">
+      <p class="text-white font-semibold text-sm" id="footerCopyrightLine">© 2026 Hak Cipta Aplikasi: Bagaskara Dion Suparman</p>
+      <p class="text-xs text-slate-400">Aplikasi "DAFTAR OBAT ANESTESI" — seluruh hak cipta desain, logika kalkulator, dan basis data dosis pada aplikasi ini adalah milik <b class="text-slate-200">Bagaskara Dion Suparman</b>.</p>
+      <p class="text-xs text-slate-500">Dilarang menghapus atau menyamarkan atribusi ini. Konten obat &amp; dosis untuk tujuan edukasi — bukan pengganti keputusan klinis tenaga medis.</p>
+    </div>
+  </footer>
+
+  <div class="fixed right-3 z-40 bg-slate-900/90 text-white text-[10px] tracking-wide px-3 py-1.5 rounded-full shadow-lg" style="bottom:calc(0.75rem + env(safe-area-inset-bottom,0px));">
+    🄯 Bagaskara Dion Suparman
+  </div>
+
+  <!-- Modal Detail (dipakai bersama oleh tab Daftar Obat & tab Daftar Cairan) -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="bg-white rounded-2xl max-w-xl w-full shadow-xl fade-in" style="max-height:85vh; display:flex; flex-direction:column;">
+      <div class="flex items-start justify-between gap-3 px-5 pt-5 pb-3 border-b border-slate-100">
+        <h3 id="modalTitle" class="text-lg font-bold text-slate-900"></h3>
+        <button class="shrink-0 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500" onclick="closeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="overflow-y-auto px-5 py-4 space-y-2.5 text-sm" id="modalBody"></div>
+    </div>
+  </div>
+
+<script>
+  // ---------------------------------------------------------------
+  // HAK CIPTA: Bagaskara Dion Suparman — jangan hapus baris ini.
+  // ---------------------------------------------------------------
+  console.log('%cDAFTAR OBAT ANESTESI — dikembangkan oleh Bagaskara Dion Suparman', 'color:#0F766E;font-weight:bold;font-size:13px;');
+
+  // ======================================================================
+  // KONFIGURASI SUMBER DATA (WAJIB DIISI SETELAH DEPLOY APPS SCRIPT)
+  // ======================================================================
+  // 1. Deploy Code.gs sebagai Web App (Execute as: Me, Who has access: Anyone).
+  // 2. Salin URL yang diakhiri "/exec".
+  // 3. Tempel URL tersebut di bawah ini, lalu commit & push ke GitHub.
+  // Data TETAP live dari spreadsheet setiap kali halaman ini dibuka/refresh —
+  // tidak perlu redeploy GitHub Pages saat spreadsheet berubah.
+  var API_BASE_URL = 'https://script.google.com/macros/s/AKfycbxlDHNvabL7MtZ86lJmO9-SfWJVinGsJNHRb_cvpbABUyK33g7wxojN-X3YyNwDZc4mMQ/exec';
+
+  var OBAT_LIST = [];
+  var CAIRAN_LIST = [];
+  var DOSAGE_DB = null;
+  var FLUID_CONFIG = null;
+
+  // ---------- HELPER: AMBIL DATA DARI APPS SCRIPT (fetch + fallback JSONP) ----------
+  function apiGet(action){
+    if (!API_BASE_URL || API_BASE_URL.indexOf('PASTE_URL_WEB_APP') !== -1){
+      return Promise.reject(new Error('API_BASE_URL belum diisi. Buka file index.html, isi variabel API_BASE_URL dengan URL Web App Apps Script Anda.'));
+    }
+    var sep = API_BASE_URL.indexOf('?') === -1 ? '?' : '&';
+    return fetch(API_BASE_URL + sep + 'action=' + encodeURIComponent(action), { cache: 'no-store' })
+      .then(function(res){
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function(res){
+        if (!res || res.ok === false) throw new Error((res && res.error) || 'Respons API tidak valid.');
+        return res.data;
+      })
+      .catch(function(err){
+        console.warn('fetch() gagal (' + err.message + '), mencoba JSONP sebagai fallback...');
+        return apiGetJSONP(action);
+      });
+  }
+
+  var _jsonpCounter = 0;
+  function apiGetJSONP(action){
+    return new Promise(function(resolve, reject){
+      var cbName = '_jsonp_cb_' + (_jsonpCounter++);
+      var sep = API_BASE_URL.indexOf('?') === -1 ? '?' : '&';
+      var script = document.createElement('script');
+      window[cbName] = function(res){
+        delete window[cbName];
+        script.remove();
+        if (!res || res.ok === false){ reject(new Error((res && res.error) || 'Respons API (JSONP) tidak valid.')); return; }
+        resolve(res.data);
+      };
+      script.src = API_BASE_URL + sep + 'action=' + encodeURIComponent(action) + '&callback=' + cbName;
+      script.onerror = function(){ delete window[cbName]; script.remove(); reject(new Error('Gagal memuat data (JSONP) — periksa URL API_BASE_URL.')); };
+      document.body.appendChild(script);
+    });
+  }
+
+  // ---------- TAB SWITCHING ----------
+  document.querySelectorAll('.tab-pill').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-pill').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('main > section.panel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.subtab').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.subtab').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.subpanel').forEach(function(p){ p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('sub-' + btn.dataset.sub).classList.add('active');
+    });
+  });
+
+  // ---------- LOAD DATA (live dari Google Spreadsheet via Apps Script API) ----------
+  function loadObatList(){
+    document.getElementById('tableWrap').innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Memuat data dari spreadsheet...</div>';
+    apiGet('getObatList').then(function(list){
+      OBAT_LIST = list;
+      renderTable(OBAT_LIST);
+    }).catch(function(err){
+      document.getElementById('tableWrap').innerHTML =
+        '<div class="p-4 text-sm text-red-600 bg-red-50">Gagal memuat data dari spreadsheet: ' + escapeHtml(err.message) + '</div>';
+    });
+  }
+
+  function loadCairanList(){
+    document.getElementById('cairanListTableWrap').innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Memuat data dari spreadsheet...</div>';
+    apiGet('getCairanList').then(function(list){
+      CAIRAN_LIST = list;
+      renderCairanListTable(CAIRAN_LIST);
+    }).catch(function(err){
+      document.getElementById('cairanListTableWrap').innerHTML =
+        '<div class="p-4 text-sm text-red-600 bg-red-50">Gagal memuat data dari Sheet2: ' + escapeHtml(err.message) + '</div>';
+    });
+  }
+
+  function init(){
+    loadObatList();
+    loadCairanList();
+
+    apiGet('getDosageDB').then(function(db){
+      DOSAGE_DB = db;
+      populateDosisObatSelect();
+      populateEncerObatSelect();
+      populatePumpPreset();
+    }).catch(function(err){
+      console.error('Gagal memuat basis data dosis:', err.message);
+    });
+
+    apiGet('getFluidCalcConfig').then(function(cfg){
+      FLUID_CONFIG = cfg;
+    }).catch(function(err){
+      console.error('Gagal memuat konfigurasi kalkulator cairan:', err.message);
+    });
+
+    // Inisialisasi awal kalkulator cairan
+    updateKategoriPasien();
+    syncFaktorOperasiRange();
+
+    // Footer copyright (tahun otomatis mengikuti tahun berjalan)
+    var footerEl = document.getElementById('footerCopyrightLine');
+    if (footerEl) footerEl.textContent = '© ' + new Date().getFullYear() + ' Hak Cipta Aplikasi: Bagaskara Dion Suparman';
+  }
+
+  // ---------- TAB 1: TABEL DAFTAR OBAT ----------
+  function renderTable(list){
+    if (!list || list.length === 0){
+      document.getElementById('tableWrap').innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Tidak ada data ditemukan.</div>';
+      return;
+    }
+    var html = '<table class="obat-table w-full text-xs sm:text-sm border-collapse"><thead><tr>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Nama Obat</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Golongan</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Sediaan</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Dosis Dewasa</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Dosis Anak</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Merek Dagang</th>' +
+      '</tr></thead><tbody>';
+    list.forEach(function(o, idx){
+      html += '<tr class="obat-row border-b border-slate-100">' +
+        '<td class="px-3 py-2.5 font-bold text-teal-800 cursor-pointer" onclick="showDetail(' + idx + ')">' + escapeHtml(o.nama) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(o.golongan) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(o.sediaan) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(o.dosisDewasa) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(o.dosisAnak) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(o.merekDagang) + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('tableWrap').innerHTML = html;
+  }
+
+  document.getElementById('searchInput').addEventListener('input', function(e){
+    var q = e.target.value.toLowerCase();
+    var filtered = OBAT_LIST.filter(function(o){
+      return (o.nama + o.golongan + o.merekDagang).toLowerCase().indexOf(q) !== -1;
+    });
+    renderTable(filtered);
+  });
+
+  function showDetail(idx){
+    var o = OBAT_LIST[idx];
+    document.getElementById('modalTitle').innerHTML = o.nama + ' <span class="ml-1.5 inline-block text-[11px] font-semibold text-teal-700 bg-teal-50 rounded-full px-2.5 py-1 align-middle">' + escapeHtml(o.golongan) + '</span>';
+    var fields = [
+      ['Sediaan', o.sediaan], ['Dosis Dewasa', o.dosisDewasa], ['Dosis Anak', o.dosisAnak],
+      ['Onset', o.onset], ['Durasi', o.durasi], ['Indikasi', o.indikasi],
+      ['Kontra Indikasi', o.kontraIndikasi], ['Efek Samping', o.efekSamping],
+      ['Farmakokinetik', o.farmakokinetik], ['Farmakodinamik', o.farmakodinamik],
+      ['Antidotum', o.antidotum], ['Merek Dagang', o.merekDagang]
+    ];
+    var body = '';
+    fields.forEach(function(f){
+      body += '<div><span class="font-semibold text-teal-700">' + f[0] + ':</span> <span class="text-slate-600">' + escapeHtml(f[1] || '-') + '</span></div>';
+    });
+    document.getElementById('modalBody').innerHTML = body;
+    document.getElementById('detailModal').classList.add('active');
+  }
+  function closeModal(){ document.getElementById('detailModal').classList.remove('active'); }
+
+  function escapeHtml(s){
+    if (s === undefined || s === null) return '';
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  // ---------- TAB: TABEL DAFTAR CAIRAN (Sheet2) ----------
+  function renderCairanListTable(list){
+    if (!list || list.length === 0){
+      document.getElementById('cairanListTableWrap').innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">Tidak ada data ditemukan.</div>';
+      return;
+    }
+    var html = '<table class="obat-table w-full text-xs sm:text-sm border-collapse"><thead><tr>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Kategori</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Nama / Jenis Cairan</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Tonisitas</th>' +
+      '<th class="bg-teal-700 text-white text-left px-3 py-2.5 sticky top-0">Sediaan</th>' +
+      '</tr></thead><tbody>';
+    list.forEach(function(c, idx){
+      html += '<tr class="obat-row border-b border-slate-100">' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(c.kategori) + '</td>' +
+        '<td class="px-3 py-2.5 font-bold text-teal-800 cursor-pointer" onclick="showCairanListDetail(' + idx + ')">' + escapeHtml(c.nama) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(c.tonisitas) + '</td>' +
+        '<td class="px-3 py-2.5 text-slate-600">' + escapeHtml(c.sediaan) + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('cairanListTableWrap').innerHTML = html;
+  }
+
+  document.getElementById('cairanListSearchInput').addEventListener('input', function(e){
+    var q = e.target.value.toLowerCase();
+    var filtered = CAIRAN_LIST.filter(function(c){
+      return (c.kategori + c.nama + c.tonisitas).toLowerCase().indexOf(q) !== -1;
+    });
+    renderCairanListTable(filtered);
+  });
+
+  function showCairanListDetail(idx){
+    var c = CAIRAN_LIST[idx];
+    document.getElementById('modalTitle').innerHTML = c.nama + ' <span class="ml-1.5 inline-block text-[11px] font-semibold text-teal-700 bg-teal-50 rounded-full px-2.5 py-1 align-middle">' + escapeHtml(c.kategori) + '</span>';
+    var fields = [
+      ['Kandungan Utama', c.kandungan], ['Tonisitas', c.tonisitas],
+      ['Indikasi', c.indikasi], ['Kontraindikasi', c.kontraindikasi], ['Sediaan', c.sediaan]
+    ];
+    var body = '';
+    fields.forEach(function(f){
+      body += '<div><span class="font-semibold text-teal-700">' + f[0] + ':</span> <span class="text-slate-600">' + escapeHtml(f[1] || '-') + '</span></div>';
+    });
+    document.getElementById('modalBody').innerHTML = body;
+    document.getElementById('detailModal').classList.add('active');
+  }
+
+  // ---------- TAB 2A: KALKULATOR DOSIS PER KGBB ----------
+
+  // Obat infus kontinu khusus yang menggunakan rumus kecepatan syringe pump
+  // (kecepatan mL/jam = dosis x BB x 60 / konsentrasi), dengan total cairan
+  // dalam spuit DITETAPKAN 50 mL sesuai permintaan, dan jumlah obat dapat
+  // diisi dalam satuan mg ATAU mcg. Nilai "jumlah"/"satuan" di bawah hanya
+  // nilai default (contoh umum) yang otomatis terisi, dan tetap bisa diubah.
+  var SPECIAL_SYRINGE_DRUGS = {
+    "Nor Epinephrine": { jumlah: 4, satuan: 'mg' },
+    "Adrenaline (Epinefrin)": { jumlah: 4, satuan: 'mg' },
+    "Dopamin (Dopamine)": { jumlah: 400, satuan: 'mg' },
+    "Dobutamin (Dobutamine)": { jumlah: 250, satuan: 'mg' },
+    "Amiodaron (Amiodarone)": { jumlah: 150, satuan: 'mg' },
+    "Dexmetomidine (Dexmedetomidine)": { jumlah: 200, satuan: 'mcg' }
+  };
+  var SPUIT_VOL_TETAP = 50; // mL — total cairan dalam spuit, sesuai permintaan
+
+  function populateDosisObatSelect(){
+    var sel = document.getElementById('dosisObat');
+    sel.innerHTML = '';
+    Object.keys(DOSAGE_DB).sort().forEach(function(nama){
+      var opt = document.createElement('option');
+      opt.value = nama; opt.textContent = nama;
+      sel.appendChild(opt);
+    });
+    populateDosisJenisSelect();
+  }
+
+  document.getElementById('dosisObat').addEventListener('change', populateDosisJenisSelect);
+  document.getElementById('dosisPopulasi').addEventListener('change', populateDosisJenisSelect);
+
+  function populateDosisJenisSelect(){
+    var obatNama = document.getElementById('dosisObat').value;
+    var pop = document.getElementById('dosisPopulasi').value;
+    var sel = document.getElementById('dosisJenis');
+    sel.innerHTML = '';
+    if (!DOSAGE_DB || !DOSAGE_DB[obatNama]) return;
+    var obat = DOSAGE_DB[obatNama];
+    var list = obat.dosis[pop] || [];
+    if (list.length === 0){
+      var opt = document.createElement('option');
+      opt.textContent = 'Tidak tersedia untuk populasi ini';
+      sel.appendChild(opt);
+    } else {
+      list.forEach(function(d, i){
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = d.nama + (d.satuan ? ' (' + d.satuan + ')' : '');
+        sel.appendChild(opt);
+      });
+    }
+    populateDosisStokSelect();
+    renderMacCard(obat);
+    document.getElementById('dosisResult').innerHTML = '';
+  }
+
+  function populateDosisStokSelect(){
+    var obatNama = document.getElementById('dosisObat').value;
+    var wrap = document.getElementById('dosisStokWrap');
+    var spuitWrap = document.getElementById('dosisSpuitWrap');
+    var obat = DOSAGE_DB[obatNama];
+
+    // Obat infus kontinu khusus (Norepinefrin, Adrenalin, Dobutamin, Dopamin,
+    // Amiodaron, Dexmedetomidine): pakai input "jumlah obat dalam spuit 50 mL"
+    // + pilihan satuan mg/mcg, BUKAN dropdown konsentrasi ampul biasa —
+    // karena konsentrasi yang relevan adalah konsentrasi setelah dilarutkan
+    // dalam spuit, bukan konsentrasi ampul aslinya.
+    if (SPECIAL_SYRINGE_DRUGS[obatNama]){
+      wrap.innerHTML = '';
+      var def = SPECIAL_SYRINGE_DRUGS[obatNama];
+      var html = '<label class="field-label">Jumlah Obat dalam Spuit (Total Cairan ' + SPUIT_VOL_TETAP + ' mL)</label>' +
+        '<div class="flex gap-2">' +
+        '<input type="number" id="dosisSpuitJumlah" class="field-input" min="0" step="0.01" value="' + def.jumlah + '">' +
+        '<select id="dosisSpuitSatuan" class="field-input" style="max-width:110px;">' +
+        '<option value="mg"' + (def.satuan === 'mg' ? ' selected' : '') + '>mg</option>' +
+        '<option value="mcg"' + (def.satuan === 'mcg' ? ' selected' : '') + '>mcg</option>' +
+        '</select></div>' +
+        '<p class="text-[11px] text-slate-400 mt-1">Kecepatan infus dihitung otomatis: dosis &times; BB &times; 60 / konsentrasi (obat dilarutkan dalam total ' + SPUIT_VOL_TETAP + ' mL cairan).</p>';
+      spuitWrap.innerHTML = html;
+      return;
+    }
+    spuitWrap.innerHTML = '';
+
+    if (!obat || !obat.stok || obat.stok.length === 0){
+      wrap.innerHTML = '';
+      return;
+    }
+    var html = '<label class="field-label" for="dosisStokSelect">Konsentrasi Sediaan yang Dipakai (untuk hitung volume/cc)</label><select id="dosisStokSelect" class="field-input">';
+    obat.stok.forEach(function(s, i){
+      html += '<option value="' + i + '">' + s.label + '</option>';
+    });
+    html += '</select>';
+    wrap.innerHTML = html;
+  }
+
+  // Kartu rentang MAC khusus obat inhalasi volatil (Sevofluran, Isoflurane, Desflurane)
+  function renderMacCard(obat){
+    var wrap = document.getElementById('macCardWrap');
+    if (!obat || !obat.mac){ wrap.innerHTML = ''; return; }
+
+    function rangeHtml(seg){
+      if (!seg) return '<span class="text-slate-400">—</span>';
+      if (seg.info) return '<span class="text-slate-600">' + escapeHtml(seg.info) + '</span>';
+      return '<span class="text-xl font-bold text-emerald-800">' + seg.min + (seg.max !== seg.min ? '–' + seg.max : '') + '<span class="text-sm font-semibold text-emerald-700"> ' + seg.satuan + '</span></span>';
+    }
+
+    var html = '<div class="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4">' +
+      '<h3 class="text-sm font-bold text-cyan-800 mb-3 flex items-center gap-1.5">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>' +
+      'Rentang MAC (Vaporizer) — Dewasa &amp; Anak</h3>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">';
+
+    ['dewasa','anak'].forEach(function(pop){
+      var seg = obat.mac[pop];
+      if (!seg) return;
+      html += '<div class="bg-white rounded-xl border border-cyan-100 p-3.5">' +
+        '<div class="text-xs font-bold text-slate-700 mb-2">' + (pop === 'dewasa' ? 'Dewasa' : 'Anak') + ' <span class="font-medium text-slate-400">(' + escapeHtml(seg.macValue || '') + ')</span></div>' +
+        '<div class="space-y-1.5 text-sm">' +
+        '<div class="flex items-center justify-between gap-2"><span class="text-slate-500 text-xs">Induksi</span>' + rangeHtml(seg.induksi) + '</div>' +
+        '<div class="flex items-center justify-between gap-2"><span class="text-slate-500 text-xs">Maintenance</span>' + rangeHtml(seg.maintenance) + '</div>' +
+        '</div></div>';
+    });
+
+    html += '</div></div>';
+    wrap.innerHTML = html;
+  }
+
+  function resultCardOpen(titleHtml){
+    return '<div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">' +
+      (titleHtml ? '<div class="text-sm font-bold text-slate-700 mb-2">' + titleHtml + '</div>' : '');
+  }
+  function resultCardClose(){ return '</div>'; }
+  function warnLine(text){
+    return '<div class="mt-2 flex gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"><span>⚠</span><span>' + text + '</span></div>';
+  }
+  function dangerLine(text){
+    return '<div class="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">' + text + '</div>';
+  }
+
+  function hitungDosis(){
+    var obatNama = document.getElementById('dosisObat').value;
+    var pop = document.getElementById('dosisPopulasi').value;
+    var bb = parseFloat(document.getElementById('dosisBB').value);
+    var idx = parseInt(document.getElementById('dosisJenis').value, 10);
+    var resDiv = document.getElementById('dosisResult');
+    var obat = DOSAGE_DB[obatNama];
+    var list = obat.dosis[pop] || [];
+    var d = list[idx];
+
+    if (!d){
+      resDiv.innerHTML = dangerLine('Data dosis tidak tersedia.');
+      return;
+    }
+
+    if (d.tipe === 'tidak_perkg' || d.tipe === 'info'){
+      resDiv.innerHTML = warnLine(d.info || 'Dosis tidak dihitung berdasarkan berat badan untuk obat/jenis ini. Lihat kartu rentang MAC di atas bila tersedia.');
+      return;
+    }
+
+    var stokEl = document.getElementById('dosisStokSelect');
+    var stok = null;
+    if (stokEl && obat.stok && obat.stok.length){
+      stok = obat.stok[parseInt(stokEl.value, 10)];
+    }
+
+    if (!bb || bb <= 0){
+      if (d.tipe === 'fixed'){
+        var html0 = resultCardOpen(obatNama + ' — ' + d.nama);
+        html0 += '<div class="text-2xl font-bold text-emerald-800 num">' + d.min + (d.max !== d.min ? ' – ' + d.max : '') + ' <span class="text-base font-semibold text-emerald-700">' + d.satuan + '</span></div>';
+        if (d.catatan) html0 += '<p class="text-xs text-slate-500 mt-1">' + escapeHtml(d.catatan) + '</p>';
+        if (stok) html0 += volumeLine(d.min, d.max, stok, d.satuan);
+        html0 += '<p class="text-xs text-slate-400 mt-2">Dosis ini tetap (fixed), tidak bergantung BB.</p>';
+        html0 += resultCardClose();
+        resDiv.innerHTML = html0;
+        return;
+      }
+      resDiv.innerHTML = warnLine('Masukkan berat badan (kg) terlebih dahulu untuk menghitung dosis per kgBB.');
+      return;
+    }
+
+    var html = resultCardOpen(obatNama + ' — ' + d.nama);
+
+    if (d.tipe === 'fixed'){
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + d.min + (d.max !== d.min ? ' – ' + d.max : '') + ' <span class="text-base font-semibold text-emerald-700">' + d.satuan + '</span></div>';
+      if (d.catatan) html += '<p class="text-xs text-slate-500 mt-1">' + escapeHtml(d.catatan) + '</p>';
+      if (stok) html += volumeLine(d.min, d.max, stok, d.satuan);
+    }
+    else if (d.tipe === 'perkgBB'){
+      var lo = (d.min * bb), hi = (d.max * bb);
+      var lowCapped = lo, hiCapped = hi;
+      html += '<p class="text-xs text-slate-500 mb-1">BB: ' + bb + ' kg &times; ' + d.min + (d.max !== d.min ? '–' + d.max : '') + ' ' + d.satuan + '</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(lo) + (d.max !== d.min ? ' – ' + fmt(hi) : '') + ' <span class="text-base font-semibold text-emerald-700">' + d.satuan.split('/')[0] + '</span></div>';
+      if (d.maks){
+        lowCapped = Math.min(lo, d.maks); hiCapped = Math.min(hi, d.maks);
+        html += warnLine('Batas maksimal: ' + d.maks + ' ' + d.satuanMaks + ' &rarr; dosis yang dipakai: <b>' + fmt(lowCapped) + ' – ' + fmt(hiCapped) + ' ' + d.satuanMaks + '</b>');
+      }
+      if (d.minAbsolut){
+        html += warnLine('Dosis minimal absolut yang dianjurkan: ' + d.minAbsolut + ' ' + d.satuanMinAbsolut);
+      }
+      if (d.catatan) html += '<p class="text-xs text-slate-500 mt-1">' + escapeHtml(d.catatan) + '</p>';
+      if (stok) html += volumeLine(lowCapped, hiCapped, stok, d.satuan);
+    }
+    else if (d.tipe === 'perkgBB_menit'){
+      var loM = d.min * bb, hiM = d.max * bb;
+      html += '<p class="text-xs text-slate-500 mb-1">BB: ' + bb + ' kg &times; ' + d.min + '-' + d.max + ' ' + d.satuan + '</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(loM) + ' – ' + fmt(hiM) + ' <span class="text-base font-semibold text-emerald-700">' + d.satuan.split('/')[0] + '/menit</span></div>';
+      html += '<p class="text-xs text-slate-500 mt-1">= ' + fmt(loM*60) + ' – ' + fmt(hiM*60) + ' ' + d.satuan.split('/')[0] + '/jam (setelah dikonversi)</p>';
+
+      if (SPECIAL_SYRINGE_DRUGS[obatNama]){
+        html += pumpRateLineFromSpuit(loM*60, hiM*60, d.satuan);
+      } else if (stok){
+        html += volumeLine(loM*60, hiM*60, stok, d.satuan, ' /jam (laju infus dalam mL/jam pada konsentrasi sediaan ini)');
+      }
+    }
+    else if (d.tipe === 'perkgBB_jam'){
+      var loJ = d.min * bb, hiJ = d.max * bb;
+      html += '<p class="text-xs text-slate-500 mb-1">BB: ' + bb + ' kg &times; ' + d.min + (d.max !== d.min ? '-' + d.max : '') + ' ' + d.satuan + '</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(loJ) + (d.max !== d.min ? ' – ' + fmt(hiJ) : '') + ' <span class="text-base font-semibold text-emerald-700">' + d.satuan.split('/')[0] + '/jam</span></div>';
+
+      if (SPECIAL_SYRINGE_DRUGS[obatNama]){
+        html += pumpRateLineFromSpuit(loJ, hiJ, d.satuan);
+      } else if (stok){
+        html += volumeLine(loJ, hiJ, stok, d.satuan, ' /jam (laju infus dalam mL/jam pada konsentrasi sediaan ini)');
+      }
+    }
+
+    html += resultCardClose();
+    resDiv.innerHTML = html;
+  }
+
+  // Menghitung & menampilkan baris volume (mL/cc) yang harus diberikan
+  // (dipakai untuk obat selain 6 obat infus kontinu khusus di atas).
+  function volumeLine(doseMin, doseMax, stok, satuanDosis, suffix){
+    suffix = suffix || '';
+    var satuanDasar = satuanDosis.indexOf('mcg') === 0 ? 'mcg' : 'mg';
+    var konsentrasi = stok.mgPerMl;
+    var stokSatuan = (stok.label.indexOf('mcg') !== -1) ? 'mcg' : 'mg';
+
+    var doseMinConv = doseMin, doseMaxConv = doseMax;
+    if (satuanDasar === 'mcg' && stokSatuan === 'mg'){
+      doseMinConv = doseMin / 1000; doseMaxConv = doseMax / 1000;
+    } else if (satuanDasar === 'mg' && stokSatuan === 'mcg'){
+      doseMinConv = doseMin * 1000; doseMaxConv = doseMax * 1000;
+    }
+
+    var volMin = doseMinConv / konsentrasi;
+    var volMax = doseMaxConv / konsentrasi;
+
+    return '<div class="mt-3 pt-3 border-t border-dashed border-emerald-200 flex items-start gap-2">' +
+      '<svg class="text-emerald-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3v12h-5c-.023-3.681.184-7.406 5-12zM12 3H7v18h10"/><path d="M8 21h8"/></svg>' +
+      '<div><div class="text-xs text-slate-500">Volume yang harus disuntikkan (sediaan ' + stok.label + ')</div>' +
+      '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(volMin) + (Math.abs(volMax-volMin) > 0.0001 ? ' – ' + fmt(volMax) : '') + ' <span class="text-base font-semibold text-emerald-700">mL (cc)</span></div>' + suffix + '</div></div>';
+  }
+
+  // Menghitung & menampilkan KECEPATAN INFUS (mL/jam) untuk 6 obat infus
+  // kontinu khusus, memakai rumus: kecepatan = dosis x BB x 60 / konsentrasi,
+  // dengan obat dilarutkan dalam total cairan spuit SPUIT_VOL_TETAP (50 mL).
+  // Parameter doseLoPerJam/doseHiPerJam SUDAH dalam satuan dosis per JAM
+  // (untuk tipe perkgBB_menit, nilai ini = dosis_per_menit x BB x 60;
+  //  untuk tipe perkgBB_jam, nilai ini = dosis_per_jam x BB) — sehingga
+  // pembagian dengan konsentrasi di bawah ini sudah sama persis dengan
+  // rumus "dosis x BB x 60 / konsentrasi" yang diminta.
+  function pumpRateLineFromSpuit(doseLoPerJam, doseHiPerJam, satuanDosis){
+    var jumlahEl = document.getElementById('dosisSpuitJumlah');
+    var satuanEl = document.getElementById('dosisSpuitSatuan');
+    if (!jumlahEl || !jumlahEl.value || parseFloat(jumlahEl.value) <= 0){
+      return warnLine('Isi jumlah obat dalam spuit (total ' + SPUIT_VOL_TETAP + ' mL) untuk menghitung kecepatan infus (mL/jam).');
+    }
+    var jumlah = parseFloat(jumlahEl.value);
+    var satuanJumlah = satuanEl.value; // mg | mcg
+    var satuanDasar = satuanDosis.indexOf('mcg') === 0 ? 'mcg' : 'mg';
+
+    var jumlahKonv = jumlah;
+    if (satuanDasar === 'mcg' && satuanJumlah === 'mg') jumlahKonv = jumlah * 1000;
+    if (satuanDasar === 'mg' && satuanJumlah === 'mcg') jumlahKonv = jumlah / 1000;
+
+    var konsentrasi = jumlahKonv / SPUIT_VOL_TETAP; // satuanDasar per mL
+
+    var rateLo = doseLoPerJam / konsentrasi;
+    var rateHi = doseHiPerJam / konsentrasi;
+
+    var html = '<div class="mt-3 pt-3 border-t border-dashed border-emerald-200 flex items-start gap-2">' +
+      '<svg class="text-emerald-600 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>' +
+      '<div><div class="text-xs text-slate-500">Kecepatan Infus (Syringe Pump, spuit ' + SPUIT_VOL_TETAP + ' mL, konsentrasi ' + fmt(konsentrasi) + ' ' + satuanDasar + '/mL)</div>' +
+      '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(rateLo) + (Math.abs(rateHi-rateLo) > 0.0001 ? ' – ' + fmt(rateHi) : '') + ' <span class="text-base font-semibold text-emerald-700">mL/jam (cc/jam)</span></div></div></div>';
+
+    if (rateLo > SPUIT_VOL_TETAP * 2 || rateHi > SPUIT_VOL_TETAP * 2){
+      html += warnLine('Kecepatan infus relatif besar dibanding volume spuit (' + SPUIT_VOL_TETAP + ' mL) — spuit akan cepat habis, pertimbangkan menambah jumlah obat (konsentrasi lebih pekat).');
+    }
+    return html;
+  }
+
+  function fmt(n){
+    return (Math.round(n * 1000) / 1000).toString();
+  }
+
+  // ---------- TAB 2B: KALKULATOR SYRINGE PUMP ----------
+  var PRESET_SYRINGE = [
+    { label: 'Norepinephrine — 4 mg / 50 mL', jumlah: 4, satuanJumlah: 'mg', vol: 50, dosis: 0.05, satuanDosis: 'mcg_menit' },
+    { label: 'Norepinephrine — 2 mg / 20 mL', jumlah: 2, satuanJumlah: 'mg', vol: 20, dosis: 0.05, satuanDosis: 'mcg_menit' },
+    { label: 'Adrenaline (Epinefrin) — 4 mg / 50 mL', jumlah: 4, satuanJumlah: 'mg', vol: 50, dosis: 0.05, satuanDosis: 'mcg_menit' },
+    { label: 'Adrenaline (Epinefrin) — 1 mg / 20 mL', jumlah: 1, satuanJumlah: 'mg', vol: 20, dosis: 0.05, satuanDosis: 'mcg_menit' },
+    { label: 'Dopamin — 400 mg / 50 mL', jumlah: 400, satuanJumlah: 'mg', vol: 50, dosis: 5, satuanDosis: 'mcg_menit' },
+    { label: 'Dopamin — 160 mg / 20 mL', jumlah: 160, satuanJumlah: 'mg', vol: 20, dosis: 5, satuanDosis: 'mcg_menit' },
+    { label: 'Dobutamin — 250 mg / 50 mL', jumlah: 250, satuanJumlah: 'mg', vol: 50, dosis: 5, satuanDosis: 'mcg_menit' },
+    { label: 'Dobutamin — 100 mg / 20 mL', jumlah: 100, satuanJumlah: 'mg', vol: 20, dosis: 5, satuanDosis: 'mcg_menit' },
+    { label: 'Amiodaron — 150 mg / 50 mL (D5%)', jumlah: 150, satuanJumlah: 'mg', vol: 50, dosis: 10, satuanDosis: 'mcg_menit' },
+    { label: 'Dexmetomidine — 200 mcg / 50 mL', jumlah: 200, satuanJumlah: 'mcg', vol: 50, dosis: 0.4, satuanDosis: 'mcg_jam' },
+    { label: 'Midazolam — 50 mg / 50 mL', jumlah: 50, satuanJumlah: 'mg', vol: 50, dosis: 0.1, satuanDosis: 'mg_jam' },
+    { label: 'Fentanyl — 500 mcg / 50 mL', jumlah: 500, satuanJumlah: 'mcg', vol: 50, dosis: 1, satuanDosis: 'mcg_jam' },
+    { label: 'Fentanyl — 250 mcg / 20 mL', jumlah: 250, satuanJumlah: 'mcg', vol: 20, dosis: 1, satuanDosis: 'mcg_jam' },
+    { label: 'Propofol (langsung, tanpa pengenceran) — 500 mg / 50 mL', jumlah: 500, satuanJumlah: 'mg', vol: 50, dosis: 6, satuanDosis: 'mg_jam' },
+    { label: 'Nicardipin — 25 mg / 50 mL', jumlah: 25, satuanJumlah: 'mg', vol: 50, dosis: 1, satuanDosis: 'mcg_menit' }
+  ];
+
+  function populatePumpPreset(){
+    var sel = document.getElementById('pumpPreset');
+    sel.innerHTML = '<option value="">-- pilih preset atau isi manual --</option>';
+    PRESET_SYRINGE.forEach(function(p, i){
+      var opt = document.createElement('option');
+      opt.value = i; opt.textContent = p.label;
+      sel.appendChild(opt);
+    });
+  }
+
+  document.getElementById('pumpPreset').addEventListener('change', function(){
+    var idx = this.value;
+    if (idx === '') return;
+    var p = PRESET_SYRINGE[idx];
+    document.getElementById('pumpJumlahObat').value = p.jumlah;
+    document.getElementById('pumpSatuanJumlah').value = p.satuanJumlah;
+    document.getElementById('pumpSyringeVol').value = p.vol;
+    document.getElementById('pumpDosis').value = p.dosis;
+    document.getElementById('pumpSatuanDosis').value = p.satuanDosis;
+    document.querySelectorAll('#pumpSyringeChips .chip-preset').forEach(function(c){
+      c.classList.toggle('active', c.dataset.vol == p.vol);
+    });
+    updatePumpKonsentrasi();
+  });
+
+  document.querySelectorAll('#pumpSyringeChips .chip-preset').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('#pumpSyringeChips .chip-preset').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      if (chip.dataset.vol !== 'custom'){
+        document.getElementById('pumpSyringeVol').value = chip.dataset.vol;
+      }
+      updatePumpKonsentrasi();
+    });
+  });
+
+  ['pumpJumlahObat','pumpSatuanJumlah','pumpSyringeVol'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', updatePumpKonsentrasi);
+    document.getElementById(id).addEventListener('change', updatePumpKonsentrasi);
+  });
+
+  function updatePumpKonsentrasi(){
+    var jumlah = parseFloat(document.getElementById('pumpJumlahObat').value);
+    var satuan = document.getElementById('pumpSatuanJumlah').value;
+    var vol = parseFloat(document.getElementById('pumpSyringeVol').value);
+    var tampil = document.getElementById('pumpKonsentrasiTampil');
+    if (!jumlah || !vol || jumlah <= 0 || vol <= 0){
+      tampil.value = '—';
+      return;
+    }
+    var konsentrasi = jumlah / vol;
+    tampil.value = fmt(konsentrasi) + ' ' + satuan + '/mL';
+  }
+
+  function hitungSyringePump(){
+    var resDiv = document.getElementById('pumpResult');
+    var bb = parseFloat(document.getElementById('pumpBB').value);
+    var jumlah = parseFloat(document.getElementById('pumpJumlahObat').value);
+    var satuanJumlah = document.getElementById('pumpSatuanJumlah').value; // mg | mcg
+    var vol = parseFloat(document.getElementById('pumpSyringeVol').value);
+    var dosis = parseFloat(document.getElementById('pumpDosis').value);
+    var satuanDosis = document.getElementById('pumpSatuanDosis').value; // mcg_menit | mcg_jam | mg_jam | mg_menit
+
+    if (!bb || bb <= 0){ resDiv.innerHTML = dangerLine('Masukkan berat badan pasien (kg) terlebih dahulu.'); return; }
+    if (!jumlah || jumlah <= 0){ resDiv.innerHTML = dangerLine('Masukkan jumlah total obat dalam spuit.'); return; }
+    if (!vol || vol <= 0){ resDiv.innerHTML = dangerLine('Masukkan volume total spuit (mL).'); return; }
+    if (!dosis || dosis <= 0){ resDiv.innerHTML = dangerLine('Masukkan dosis yang diinginkan.'); return; }
+
+    var satuanDosisMassa = satuanDosis.indexOf('mcg') === 0 ? 'mcg' : 'mg';
+    var perMenit = satuanDosis.indexOf('menit') !== -1;
+
+    // konversi jumlah obat ke satuan massa yang sama dengan satuan dosis
+    var jumlahKonv = jumlah;
+    if (satuanDosisMassa === 'mcg' && satuanJumlah === 'mg') jumlahKonv = jumlah * 1000;
+    if (satuanDosisMassa === 'mg' && satuanJumlah === 'mcg') jumlahKonv = jumlah / 1000;
+
+    var konsentrasi = jumlahKonv / vol; // satuan/mL, sesuai satuanDosisMassa
+
+    var lajuPerJam; // dalam satuan satuanDosisMassa per jam
+    if (perMenit){
+      lajuPerJam = dosis * bb * 60;
+    } else {
+      lajuPerJam = dosis * bb;
+    }
+
+    var mlPerJam = lajuPerJam / konsentrasi;
+    var mlPerMenit = mlPerJam / 60;
+
+    var satuanLabel = satuanDosisMassa + '/kgBB/' + (perMenit ? 'menit' : 'jam');
+
+    var html = resultCardOpen('Hasil Perhitungan Syringe Pump');
+    html += '<p class="text-xs text-slate-500 mb-1">Konsentrasi larutan: <b>' + fmt(konsentrasi) + ' ' + satuanDosisMassa + '/mL</b> (' + jumlah + ' ' + satuanJumlah + ' dalam ' + vol + ' mL) &middot; Dosis: ' + dosis + ' ' + satuanLabel + ' &times; BB ' + bb + ' kg</p>';
+    html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(mlPerJam) + ' <span class="text-base font-semibold text-emerald-700">mL/jam (cc/jam)</span></div>';
+    html += '<p class="text-xs text-slate-500 mt-1">Setara ' + fmt(mlPerMenit) + ' mL/menit.</p>';
+
+    if (mlPerJam > vol * 2){
+      html += warnLine('Laju infus (' + fmt(mlPerJam) + ' mL/jam) relatif besar dibanding volume spuit (' + vol + ' mL) — spuit akan cepat habis, pertimbangkan konsentrasi larutan yang lebih pekat.');
+    }
+    if (mlPerJam < 0.5){
+      html += warnLine('Laju infus sangat kecil (< 0,5 mL/jam) — pastikan syringe pump Anda mampu menitrasi presisi sekecil ini, atau pertimbangkan larutan yang lebih encer.');
+    }
+
+    html += resultCardClose();
+    resDiv.innerHTML = html;
+  }
+
+  // ---------- TAB 3: KALKULATOR PENGENCERAN ----------
+  function populateEncerObatSelect(){
+    var sel = document.getElementById('encerObat');
+    sel.innerHTML = '';
+    Object.keys(DOSAGE_DB).sort().forEach(function(nama){
+      var opt = document.createElement('option');
+      opt.value = nama; opt.textContent = nama;
+      sel.appendChild(opt);
+    });
+    onEncerObatChange();
+  }
+
+  document.getElementById('encerObat').addEventListener('change', onEncerObatChange);
+
+  function onEncerObatChange(){
+    var obatNama = document.getElementById('encerObat').value;
+    var obat = DOSAGE_DB[obatNama];
+    var stokWrap = document.getElementById('encerStokWrap');
+    var presetSel = document.getElementById('targetKonsentrasiPreset');
+    presetSel.innerHTML = '';
+
+    if (!obat.stok || obat.stok.length === 0){
+      stokWrap.innerHTML = '<div class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">' + (obat.pengenceran && obat.pengenceran.info ? obat.pengenceran.info : 'Obat ini tidak memiliki data konsentrasi sediaan untuk dihitung.') + '</div>';
+      var optNA = document.createElement('option'); optNA.textContent = 'Tidak tersedia'; presetSel.appendChild(optNA);
+      return;
+    }
+
+    var stokHtml = '<label class="field-label">Konsentrasi Sediaan (Stok)</label><select id="encerStokSelect" class="field-input">';
+    obat.stok.forEach(function(s, i){
+      stokHtml += '<option value="' + i + '">' + s.label + '</option>';
+    });
+    stokHtml += '</select>';
+    stokWrap.innerHTML = stokHtml;
+
+    var satuan = (obat.pengenceran && obat.pengenceran.satuanKonsentrasi) || 'mg/mL';
+    var presets = satuan === 'mcg/mL' ? [1,2,4,10,20,50] : [1,2,5,10,20];
+    presets.forEach(function(p){
+      var opt = document.createElement('option');
+      opt.value = p; opt.textContent = p + ' ' + satuan + ' (' + p + ' ' + (satuan==='mcg/mL'?'mcg/cc':'mg/cc') + ')';
+      presetSel.appendChild(opt);
+    });
+    var optCustom = document.createElement('option');
+    optCustom.value = ''; optCustom.textContent = '-- gunakan isian manual --';
+    presetSel.appendChild(optCustom);
+  }
+
+  function hitungEncer(){
+    var obatNama = document.getElementById('encerObat').value;
+    var obat = DOSAGE_DB[obatNama];
+    var resDiv = document.getElementById('encerResult');
+
+    if (!obat.stok || obat.stok.length === 0){
+      resDiv.innerHTML = warnLine('Pengenceran tidak berlaku untuk obat ini. ' + (obat.pengenceran && obat.pengenceran.info ? obat.pengenceran.info : ''));
+      return;
+    }
+
+    var stokIdx = parseInt(document.getElementById('encerStokSelect').value, 10);
+    var stok = obat.stok[stokIdx];
+    var satuan = (obat.pengenceran && obat.pengenceran.satuanKonsentrasi) || 'mg/mL';
+
+    var customVal = parseFloat(document.getElementById('targetKonsentrasiCustom').value);
+    var presetVal = parseFloat(document.getElementById('targetKonsentrasiPreset').value);
+    var target = !isNaN(customVal) && customVal > 0 ? customVal : presetVal;
+    var volTotal = parseFloat(document.getElementById('volumeTotal').value);
+
+    if (!target || target <= 0){
+      resDiv.innerHTML = dangerLine('Pilih atau isi konsentrasi akhir yang diinginkan terlebih dahulu.');
+      return;
+    }
+    if (!volTotal || volTotal <= 0){
+      resDiv.innerHTML = dangerLine('Isi volume akhir (mL) yang diinginkan terlebih dahulu.');
+      return;
+    }
+
+    var volObat = (target * volTotal) / stok.mgPerMl;
+    var volPelarut = volTotal - volObat;
+
+    if (volObat > volTotal){
+      resDiv.innerHTML = dangerLine('Target konsentrasi (' + target + ' ' + satuan + ') melebihi konsentrasi stok (' + stok.mgPerMl + ' ' + satuan + '). Tidak mungkin dicapai dengan pengenceran — pilih target konsentrasi yang lebih rendah dari konsentrasi sediaan.');
+      return;
+    }
+
+    var html = resultCardOpen(obatNama + ' — dari ' + stok.label + ' menjadi ' + target + ' ' + satuan);
+    html += '<p class="text-xs text-slate-500 mb-2">Volume akhir: ' + volTotal + ' mL</p>';
+    html += '<div class="grid grid-cols-2 gap-3">';
+    html += '<div><div class="text-xs text-slate-500">Ambil obat (sediaan pekat)</div><div class="text-2xl font-bold text-emerald-800 num">' + fmt(volObat) + ' <span class="text-sm font-semibold text-emerald-700">mL</span></div></div>';
+    html += '<div><div class="text-xs text-slate-500">Tambahkan pelarut</div><div class="text-2xl font-bold text-emerald-800 num">' + fmt(volPelarut) + ' <span class="text-sm font-semibold text-emerald-700">mL</span></div></div>';
+    html += '</div>';
+    html += '<p class="text-xs text-slate-500 mt-3">Total larutan jadi: <b>' + fmt(volObat + volPelarut) + ' mL</b> pada konsentrasi ' + target + ' ' + satuan + '</p>';
+    html += resultCardClose();
+
+    if (obat.pengenceran){
+      if (obat.pengenceran.pelarutAman){
+        html += '<div class="mt-3 flex gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3"><span class="text-emerald-600">✔</span><p class="text-xs text-emerald-800"><b>Pelarut yang aman digunakan:</b> ' + obat.pengenceran.pelarutAman.join(', ') + '</p></div>';
+      }
+      if (obat.pengenceran.hindari && obat.pengenceran.hindari !== '—'){
+        html += '<div class="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700"><b>⚠ Hindari / tidak kompatibel dengan:</b> ' + obat.pengenceran.hindari + '</div>';
+      }
+      if (obat.pengenceran.catatan){
+        html += '<div class="mt-3 flex gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"><span class="text-amber-500">ℹ</span><p class="text-xs text-amber-800"><b>Catatan tambahan:</b> ' + obat.pengenceran.catatan + '</p></div>';
+      }
+    }
+
+    resDiv.innerHTML = html;
+  }
+
+  // ---------- TAB 4: KALKULATOR CAIRAN & TRANSFUSI PERIOPERATIF ----------
+  // Faktor EBV bawaan (fallback bila FLUID_CONFIG dari server belum sempat dimuat)
+  var EBV_FACTORS_DEFAULT = { dewasa_l: 75, dewasa_p: 65, anak: 80, neonatus: 90 };
+  var PERSEN_LIST = [10, 15, 20, 30, 40, 50];
+
+  document.getElementById('cairanUsiaNilai').addEventListener('input', updateKategoriPasien);
+  document.getElementById('cairanUsiaSatuan').addEventListener('change', updateKategoriPasien);
+  document.getElementById('cairanGender').addEventListener('change', updateKategoriPasien);
+
+  document.getElementById('cairanJenisOperasi').addEventListener('change', syncFaktorOperasiRange);
+
+  function syncFaktorOperasiRange(){
+    var sel = document.getElementById('cairanJenisOperasi');
+    var opt = sel.options[sel.selectedIndex];
+    var min = parseFloat(opt.getAttribute('data-min'));
+    var max = parseFloat(opt.getAttribute('data-max'));
+    var input = document.getElementById('cairanFaktorOperasi');
+    input.min = min; input.max = max;
+    input.value = ((min + max) / 2).toFixed(1);
+  }
+
+  // Menentukan kategori pasien (untuk EBV & Maintenance) dari usia + jenis kelamin
+  function getKategoriPasien(){
+    var v = parseFloat(document.getElementById('cairanUsiaNilai').value);
+    var satuan = document.getElementById('cairanUsiaSatuan').value;
+    if (isNaN(v) || v < 0){
+      return { key: null, label: '—', isDewasa: false };
+    }
+    var hariTotal = satuan === 'hari' ? v : (satuan === 'bulan' ? v * 30 : v * 365);
+    // Neonatus: usia 1 bulan atau kurang (<= 30 hari), termasuk yang dihitung dalam satuan hari — faktor EBV 90 cc/kgBB
+    if (hariTotal <= 30){
+      return { key: 'neonatus', label: 'Neonatus', isDewasa: false };
+    }
+    var tahunTotal = satuan === 'tahun' ? v : (satuan === 'bulan' ? v / 12 : v / 365);
+    // Anak-anak: usia > 28 hari sampai < 18 tahun
+    if (tahunTotal < 18){
+      return { key: 'anak', label: 'Anak-anak', isDewasa: false };
+    }
+    // Dewasa: usia >= 18 tahun, tergantung jenis kelamin
+    var gender = document.getElementById('cairanGender').value;
+    if (gender === 'p'){
+      return { key: 'dewasa_p', label: 'Dewasa Perempuan', isDewasa: true };
+    }
+    return { key: 'dewasa_l', label: 'Dewasa Laki-laki', isDewasa: true };
+  }
+
+  function updateKategoriPasien(){
+    var info = getKategoriPasien();
+    var EBV_FACTORS = (typeof FLUID_CONFIG !== 'undefined' && FLUID_CONFIG && FLUID_CONFIG.ebvFactors) || EBV_FACTORS_DEFAULT;
+    var labelTampil = info.label;
+    if (info.key && EBV_FACTORS[info.key] !== undefined){
+      labelTampil += ' (skor ' + EBV_FACTORS[info.key] + ')';
+    }
+    document.getElementById('cairanKategoriPasien').value = labelTampil;
+    document.getElementById('cairanGenderWrap').style.display = info.isDewasa ? '' : 'none';
+  }
+
+  // Rumus Holliday-Segar untuk maintenance cairan Anak-anak & Neonatus
+  function holidaySegar(bb){
+    if (bb <= 10) return bb * 4;
+    if (bb <= 20) return 40 + (bb - 10) * 2;
+    return 60 + (bb - 20) * 1;
+  }
+
+  function hitungCairan(){
+    var resDiv = document.getElementById('cairanResult');
+    var kategori = getKategoriPasien();
+    var bb = parseFloat(document.getElementById('cairanBB').value);
+    var faktorOp = parseFloat(document.getElementById('cairanFaktorOperasi').value);
+    var lamaPuasa = parseFloat(document.getElementById('cairanLamaPuasa').value);
+    var hbAwal = parseFloat(document.getElementById('cairanHbAwal').value);
+    var hbTarget = parseFloat(document.getElementById('cairanHbTarget').value);
+    var hbMaks = parseFloat(document.getElementById('cairanHbMaks').value);
+
+    if (!kategori.key){
+      resDiv.innerHTML = dangerLine('Isi usia pasien terlebih dahulu (kriteria 1).');
+      return;
+    }
+    if (!bb || bb <= 0){
+      resDiv.innerHTML = dangerLine('Isi berat badan / BB terlebih dahulu (kriteria 2).');
+      return;
+    }
+
+    var EBV_FACTORS = (FLUID_CONFIG && FLUID_CONFIG.ebvFactors) || EBV_FACTORS_DEFAULT;
+    var ebvFactor = EBV_FACTORS[kategori.key];
+
+    // ---- 1. EBV (Estimated Blood Volume) ----
+    var ebv = bb * ebvFactor;
+
+    var html = resultCardOpen('1. EBV (Estimated Blood Volume)');
+    html += '<p class="text-xs text-slate-500 mb-1">Kategori pasien: <b>' + kategori.label + '</b> &middot; BB ' + bb + ' kg &times; ' + ebvFactor + ' cc/kgBB</p>';
+    html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(ebv) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+    html += resultCardClose();
+
+    // ---- Tabel persentase EBV & jenis penanganan ----
+    html += resultCardOpen('Estimasi Batas Kehilangan Darah berdasarkan % EBV');
+    html += '<div class="overflow-x-auto"><table class="w-full text-xs sm:text-sm"><thead><tr class="text-left text-slate-500">' +
+      '<th class="py-1 pr-3">% EBV</th><th class="py-1 pr-3">Volume (cc)</th><th class="py-1">Jenis Penanganan</th></tr></thead><tbody>';
+    PERSEN_LIST.forEach(function(p){
+      var vol = ebv * (p / 100);
+      var kriteria = p === 10 ? 'Cairan Kristaloid'
+        : (p === 15 ? 'Cairan Koloid'
+        : 'Transfusi Darah (PRC/WB/FFP)');
+      html += '<tr class="border-t border-slate-100">' +
+        '<td class="py-1.5 pr-3 font-semibold">' + p + '%</td>' +
+        '<td class="py-1.5 pr-3 num font-semibold text-emerald-800">' + fmt(vol) + ' cc</td>' +
+        '<td class="py-1.5">' + kriteria + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += resultCardClose();
+
+    // ---- 2. Maintenance cairan ----
+    var maintenance;
+    if (kategori.isDewasa){
+      maintenance = 2 * bb;
+    } else {
+      maintenance = holidaySegar(bb);
+    }
+    html += resultCardOpen('2. Maintenance Cairan');
+    if (kategori.isDewasa){
+      html += '<p class="text-xs text-slate-500 mb-1">Dewasa (&gt;18 tahun): 2 &times; BB (' + bb + ' kg)</p>';
+    } else {
+      html += '<p class="text-xs text-slate-500 mb-1">Rumus Holliday-Segar untuk ' + kategori.label + ' (BB ' + bb + ' kg): 4 cc/kg (10 kg pertama) + 2 cc/kg (10 kg kedua) + 1 cc/kg (sisanya)</p>';
+    }
+    html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(maintenance) + ' <span class="text-base font-semibold text-emerald-700">cc/jam</span></div>';
+    html += resultCardClose();
+
+    // ---- 3. Kebutuhan cairan puasa ----
+    var kebutuhanPuasa = null;
+    if (lamaPuasa && lamaPuasa > 0){
+      kebutuhanPuasa = maintenance * lamaPuasa;
+      html += resultCardOpen('3. Kebutuhan Cairan Puasa');
+      html += '<p class="text-xs text-slate-500 mb-1">Maintenance ' + fmt(maintenance) + ' cc/jam &times; ' + lamaPuasa + ' jam puasa</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(kebutuhanPuasa) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+      html += resultCardClose();
+    } else {
+      html += warnLine('Isi lama puasa (kriteria 4) untuk menghitung kebutuhan cairan puasa (poin 3).');
+    }
+
+    // ---- 4. Kehilangan cairan berdasarkan operasi & 5. Defisit ----
+    var kehilanganOperasi = null;
+    if (!isNaN(faktorOp) && faktorOp >= 0){
+      kehilanganOperasi = bb * faktorOp;
+      html += resultCardOpen('4. Kehilangan Cairan Berdasarkan Jenis Operasi');
+      html += '<p class="text-xs text-slate-500 mb-1">BB ' + bb + ' kg &times; faktor operasi terpilih ' + faktorOp + ' cc/kgBB</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(kehilanganOperasi) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+      html += resultCardClose();
+
+      var defisit = maintenance + kehilanganOperasi;
+      html += resultCardOpen('5. Defisit Kehilangan Cairan');
+      html += '<p class="text-xs text-slate-500 mb-1">Maintenance Cairan (' + fmt(maintenance) + ') + Kehilangan Cairan Operasi (' + fmt(kehilanganOperasi) + ')</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(defisit) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+      html += resultCardClose();
+    }
+
+    // ---- 6, 7, 8: butuh HB Awal & HB Target ----
+    if (hbAwal && hbTarget && hbAwal > 0 && hbTarget > 0){
+      // 6. ABL
+      var abl = ((hbAwal - hbTarget) / ((hbAwal + hbTarget) / 2)) * ebv;
+      html += resultCardOpen('6. ABL (Average/Allowable Blood Loss)');
+      html += '<p class="text-xs text-slate-500 mb-1">[(HB Awal ' + hbAwal + ' &minus; HB Target ' + hbTarget + ') / ((' + hbAwal + ' + ' + hbTarget + ') / 2)] &times; EBV ' + fmt(ebv) + ' cc</p>';
+      if (abl < 0){
+        html += warnLine('HB awal lebih rendah dari HB target sehingga ABL bernilai negatif — periksa kembali nilai HB Awal dan HB Target.');
+      } else {
+        html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(abl) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+      }
+      html += resultCardClose();
+
+      // 7. Perkiraan HB post operasi per persentase
+      html += resultCardOpen('7. Perkiraan HB Post-Operasi (berdasarkan % EBV yang hilang)');
+      html += '<div class="overflow-x-auto"><table class="w-full text-xs sm:text-sm"><thead><tr class="text-left text-slate-500">' +
+        '<th class="py-1 pr-3">% EBV Hilang</th><th class="py-1">Perkiraan HB Post-Op</th></tr></thead><tbody>';
+      PERSEN_LIST.forEach(function(p){
+        var hbPost = hbAwal * (1 - p / 100);
+        html += '<tr class="border-t border-slate-100">' +
+          '<td class="py-1.5 pr-3 font-semibold">' + p + '%</td>' +
+          '<td class="py-1.5 num font-semibold text-emerald-800">' + fmt(hbPost) + ' g/dL</td></tr>';
+      });
+      html += '</tbody></table></div>';
+      html += '<p class="text-xs text-slate-400 mt-2">Contoh: HB awal ' + hbAwal + ' &times; (1 &minus; 10%) = ' + fmt(hbAwal * 0.9) + ' g/dL.</p>';
+      html += resultCardClose();
+    } else {
+      html += warnLine('Isi HB Awal (kriteria 5) dan HB Minimal Target (kriteria 6) untuk menghitung ABL dan perkiraan HB post-operasi (poin 6–7).');
+    }
+
+    // ---- 8: Volume darah yang diberikan (butuh HB Awal & HB Maksimal Target) ----
+    if (hbAwal && hbMaks && hbAwal > 0 && hbMaks > 0){
+      var volDarah = ((hbMaks - hbAwal) * ebv) / 24;
+      html += resultCardOpen('8. Volume Darah yang Diberikan');
+      html += '<p class="text-xs text-slate-500 mb-1">(HB Maksimal Target ' + hbMaks + ' &minus; HB Sekarang ' + hbAwal + ') &times; EBV ' + fmt(ebv) + ' / 24</p>';
+      if (hbAwal < 10){
+        html += '<p class="text-[11px] text-slate-400 mb-1">＊HB sekarang (' + hbAwal + ' g/dL) &lt; 10 g/dL.</p>';
+      }
+      if (volDarah <= 0){
+        html += warnLine('HB sekarang sudah memenuhi/melebihi HB maksimal target sehingga transfusi tidak diperlukan berdasarkan rumus ini.');
+      } else {
+        html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(volDarah) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+      }
+      html += resultCardClose();
+    } else {
+      html += warnLine('Isi HB Awal (kriteria 5) dan HB Maksimal Target untuk menghitung volume darah yang diberikan (poin 8).');
+    }
+
+    // ---- 9, 10 & KALKULATOR BALANCE CAIRAN: butuh Lama Operasi ----
+    var lamaOperasi = parseFloat(document.getElementById('cairanLamaOperasi').value);
+    var iwl = null;
+
+    if (lamaOperasi && lamaOperasi > 0){
+
+      // 9. Perkiraan Kebutuhan Cairan Perioperatif
+      if (kebutuhanPuasa !== null){
+        var kebutuhanPerioperatif = kebutuhanPuasa + (maintenance * lamaOperasi);
+        html += resultCardOpen('9. Perkiraan Kebutuhan Cairan Perioperatif');
+        html += '<p class="text-xs text-slate-500 mb-1">Kebutuhan Cairan Puasa (' + fmt(kebutuhanPuasa) + ' cc) + [Maintenance ' + fmt(maintenance) + ' cc/jam &times; Lama Operasi ' + lamaOperasi + ' jam]</p>';
+        html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(kebutuhanPerioperatif) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+        html += resultCardClose();
+      } else {
+        html += warnLine('Isi Lama Puasa (kriteria 4) untuk menghitung Perkiraan Kebutuhan Cairan Perioperatif (poin 9).');
+      }
+
+      // 10. IWL (Insensible Water Loss) & estimasi produksi urin normal (referensi)
+      var IWL_CFG = (FLUID_CONFIG && FLUID_CONFIG.iwl) || { defaultRate: 0.5 };
+      var URIN_CFG = (FLUID_CONFIG && FLUID_CONFIG.urinNormal) || { min: 0.5, max: 1 };
+      var iwlRateInput = parseFloat(document.getElementById('cairanIwlRate').value);
+      var iwlRate = (!isNaN(iwlRateInput) && iwlRateInput > 0) ? iwlRateInput : IWL_CFG.defaultRate;
+      iwl = iwlRate * bb * lamaOperasi;
+      var urinMin = URIN_CFG.min * bb * lamaOperasi;
+      var urinMax = URIN_CFG.max * bb * lamaOperasi;
+
+      html += resultCardOpen('10. Insensible Water Loss (IWL) &amp; Estimasi Produksi Urin Normal');
+      html += '<p class="text-xs text-slate-500 mb-1">IWL = ' + iwlRate + ' cc/kgBB/jam (asumsi suhu standar kamar operasi ber-AC, dapat disesuaikan) &times; BB ' + bb + ' kg &times; ' + lamaOperasi + ' jam</p>';
+      html += '<div class="text-2xl font-bold text-emerald-800 num">' + fmt(iwl) + ' <span class="text-base font-semibold text-emerald-700">cc</span></div>';
+      html += '<p class="text-xs text-slate-500 mt-3 pt-3 border-t border-dashed border-emerald-200">Estimasi produksi urin normal (referensi &mdash; dikoreksi menjadi satuan cc/kgBB/jam sesuai standar klinis): 0,5&ndash;1 cc/kgBB/jam &times; BB ' + bb + ' kg &times; ' + lamaOperasi + ' jam = <b>' + fmt(urinMin) + ' &ndash; ' + fmt(urinMax) + ' cc</b></p>';
+      html += resultCardClose();
+
+      // ================== KALKULATOR BALANCE CAIRAN (DIPERBAIKI) ==================
+      // Perbaikan: rasio penggantian darah (darah:kristaloid = 1:3, darah:koloid = 1:1,
+      // darah:produk darah = 1:1) HANYA berlaku untuk kehilangan DARAH (darah pada
+      // suction + kasa). Urin & IWL BUKAN kehilangan darah, sehingga TIDAK memakai
+      // rasio ini — sebelumnya rasio ini keliru diterapkan ke seluruh selisih
+      // intake-output (termasuk urin & IWL), sekarang dipisah menjadi 2 kartu:
+      //  (A) Estimasi Kehilangan Darah & Status Penggantian — pakai rasio.
+      //  (B) Balance Cairan Total (Intake vs Output) — status cairan umum.
+      var kristaloid = parseFloat(document.getElementById('cairanKristaloid').value) || 0;
+      var koloid = parseFloat(document.getElementById('cairanKoloid').value) || 0;
+      var produkDarah = parseFloat(document.getElementById('cairanProdukDarah').value) || 0;
+      var urinTotal = parseFloat(document.getElementById('cairanUrinTotal').value) || 0;
+      var darahSuction = parseFloat(document.getElementById('cairanDarahSuction').value) || 0;
+      var kasaBesar = parseFloat(document.getElementById('cairanKasaBesar').value) || 0;
+      var kasaKecil = parseFloat(document.getElementById('cairanKasaKecil').value) || 0;
+
+      var KASA_CFG = (FLUID_CONFIG && FLUID_CONFIG.kasaVolume) || { besar: 100, kecil: 5 };
+      var RASIO_CFG = (FLUID_CONFIG && FLUID_CONFIG.bloodReplacementRatio) || { kristaloid: 3, koloid: 1, produkDarah: 1 };
+      var kasaCc = (kasaBesar * KASA_CFG.besar) + (kasaKecil * KASA_CFG.kecil);
+
+      // ---- A. Estimasi Kehilangan Darah (EBL) dari Suction & Kasa SAJA ----
+      var eblDarah = darahSuction + kasaCc;
+
+      // ---- B. Volume "setara darah" yang sudah tergantikan dari cairan yang diberikan ----
+      var setaraDariKristaloid = kristaloid / RASIO_CFG.kristaloid;
+      var setaraDariKoloid = koloid / RASIO_CFG.koloid;
+      var setaraDariProdukDarah = produkDarah / RASIO_CFG.produkDarah;
+      var totalSetaraTergantikan = setaraDariKristaloid + setaraDariKoloid + setaraDariProdukDarah;
+
+      // ---- C. Selisih penggantian darah (positif = masih kurang, negatif = sudah lebih) ----
+      var selisihDarah = eblDarah - totalSetaraTergantikan;
+
+      html += resultCardOpen('Estimasi Kehilangan Darah (EBL) &amp; Status Penggantian');
+      html += '<p class="text-xs text-slate-500 mb-1">Kehilangan darah dihitung HANYA dari darah pada suction + kasa (urin &amp; IWL bukan kehilangan darah, sehingga tidak memakai rasio penggantian darah).</p>';
+      html += '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">';
+      html += '<div><div class="text-xs font-semibold text-slate-600 mb-1">Estimasi Darah Hilang (Suction + Kasa)</div>' +
+        '<p class="text-[11px] text-slate-500">Darah Suction ' + fmt(darahSuction) + ' + Kasa ' + fmt(kasaCc) + ' (cc)</p>' +
+        '<div class="text-xl font-bold text-emerald-800 num mt-1">' + fmt(eblDarah) + ' <span class="text-sm font-semibold text-emerald-700">cc</span></div></div>';
+      html += '<div><div class="text-xs font-semibold text-slate-600 mb-1">Setara Darah yang Sudah Tergantikan</div>' +
+        '<p class="text-[11px] text-slate-500">Kristaloid ' + fmt(kristaloid) + '&divide;' + RASIO_CFG.kristaloid + ' + Koloid ' + fmt(koloid) + '&divide;' + RASIO_CFG.koloid + ' + Produk Darah ' + fmt(produkDarah) + '&divide;' + RASIO_CFG.produkDarah + '</p>' +
+        '<div class="text-xl font-bold text-emerald-800 num mt-1">' + fmt(totalSetaraTergantikan) + ' <span class="text-sm font-semibold text-emerald-700">cc</span></div></div>';
+      html += '</div>';
+
+      if (eblDarah <= 0){
+        html += warnLine('Belum ada catatan kehilangan darah dari suction/kasa &mdash; bagian penggantian darah di bawah tidak berlaku.');
+      } else if (selisihDarah > 0){
+        html += '<div class="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">' +
+          '<p class="text-xs font-semibold text-red-700 mb-2">Kekurangan penggantian darah: ' + fmt(selisihDarah) + ' cc (setara darah) &mdash; tambahkan salah satu sesuai kondisi klinis &amp; ketersediaan:</p>' +
+          '<ul class="text-xs text-red-700 space-y-1 list-disc list-inside">' +
+          '<li>Cairan Kristaloid: tambahkan ' + fmt(selisihDarah * RASIO_CFG.kristaloid) + ' cc (rasio darah:kristaloid = 1:' + RASIO_CFG.kristaloid + ')</li>' +
+          '<li>Cairan Koloid: tambahkan ' + fmt(selisihDarah * RASIO_CFG.koloid) + ' cc (rasio darah:koloid = 1:' + RASIO_CFG.koloid + ')</li>' +
+          '<li>Produk Darah (PRC/WB/FFP): tambahkan ' + fmt(selisihDarah * RASIO_CFG.produkDarah) + ' cc (rasio darah:produk darah = 1:' + RASIO_CFG.produkDarah + ')</li>' +
+          '</ul></div>';
+      } else {
+        html += '<div class="mt-3 flex gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3"><span class="text-emerald-600">✔</span><p class="text-xs text-emerald-800">Penggantian darah sudah tercukupi (kelebihan ' + fmt(Math.abs(selisihDarah)) + ' cc setara darah) &mdash; waspadai risiko kelebihan cairan (overload), khususnya bila kelebihan berasal dari volume kristaloid yang besar.</p></div>';
+      }
+      html += resultCardClose();
+
+      // ---- D. Balance Cairan Total (Intake vs Output umum: urin, darah, IWL, kasa) ----
+      var intakeTotal = kristaloid + koloid + produkDarah;
+      var outputTotal = urinTotal + darahSuction + iwl + kasaCc;
+      var balanceCairan = intakeTotal - outputTotal;
+
+      html += resultCardOpen('Balance Cairan Total (Intake vs Output)');
+      html += '<p class="text-xs text-slate-500 mb-1">Balance umum ini menilai status cairan keseluruhan (bukan khusus darah) &mdash; dipakai untuk memantau risiko overload/dehidrasi, terpisah dari kartu penggantian darah di atas.</p>';
+      html += '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">';
+      html += '<div><div class="text-xs font-semibold text-slate-600 mb-1">Total Intake</div>' +
+        '<p class="text-[11px] text-slate-500">Kristaloid ' + fmt(kristaloid) + ' + Koloid ' + fmt(koloid) + ' + Produk Darah ' + fmt(produkDarah) + ' (cc)</p>' +
+        '<div class="text-xl font-bold text-emerald-800 num mt-1">' + fmt(intakeTotal) + ' <span class="text-sm font-semibold text-emerald-700">cc</span></div></div>';
+      html += '<div><div class="text-xs font-semibold text-slate-600 mb-1">Total Output</div>' +
+        '<p class="text-[11px] text-slate-500">Urin ' + fmt(urinTotal) + ' + Darah Suction ' + fmt(darahSuction) + ' + IWL ' + fmt(iwl) + ' + Kasa ' + fmt(kasaCc) + ' (cc)</p>' +
+        '<div class="text-xl font-bold text-emerald-800 num mt-1">' + fmt(outputTotal) + ' <span class="text-sm font-semibold text-emerald-700">cc</span></div></div>';
+      html += '</div>';
+
+      html += '<div class="mt-3 pt-3 border-t border-dashed border-emerald-200">' +
+        '<div class="text-xs font-semibold text-slate-600 mb-1">Balance Cairan (Intake &minus; Output)</div>' +
+        '<div class="text-2xl font-bold ' + (balanceCairan < 0 ? 'text-red-700' : 'text-emerald-800') + ' num">' + fmt(balanceCairan) + ' <span class="text-base font-semibold">cc</span></div></div>';
+
+      if (balanceCairan < 0){
+        html += warnLine('Balance negatif (' + fmt(balanceCairan) + ' cc) &mdash; total intake lebih kecil dari total output. Untuk kehilangan DARAH, ikuti rekomendasi rasio pada kartu "Estimasi Kehilangan Darah" di atas; kekurangan dari urin/IWL umumnya diganti dengan cairan kristaloid sesuai maintenance.');
+      } else {
+        html += warnLine('Balance &ge; 0 &mdash; total intake sudah sama dengan/melebihi total output. Evaluasi ulang kecepatan &amp; jenis cairan yang diberikan agar tidak terjadi overload.');
+      }
+      html += resultCardClose();
+
+    } else {
+      html += warnLine('Isi Lama Operasi (jam) beserta data intake (cairan infus) dan output (urin, darah suction, kasa) untuk menghitung Perkiraan Kebutuhan Cairan Perioperatif (poin 9), IWL &amp; estimasi urin (poin 10), Estimasi Kehilangan Darah, dan Balance Cairan Total.');
+    }
+
+    resDiv.innerHTML = html;
+  }
+
+  init();
+
+  // ---------- PWA: daftarkan service worker (agar bisa "diinstal" & bekerja offline utk app shell) ----------
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(err){
+        console.warn('Registrasi service worker gagal:', err);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
